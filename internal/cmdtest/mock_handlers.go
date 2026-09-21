@@ -746,6 +746,10 @@ func SetupMockClient(t *testing.T) *TestServer {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
+	ts.Handle("PUT /app/rest/vcs-roots/id:", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
+
 	// Test VCS Connection
 	ts.Handle("POST /app/pipeline/repository/testConnection", func(w http.ResponseWriter, r *http.Request) {
 		JSON(w, api.TestConnectionResult{Status: "OK"})

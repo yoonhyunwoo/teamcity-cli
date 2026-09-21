@@ -875,6 +875,18 @@ List VCS roots
 <tr>
 <td>
 
+`teamcity project vcs set`
+
+</td>
+<td>
+
+Update branch settings of a VCS root
+
+</td>
+</tr>
+<tr>
+<td>
+
 `teamcity project vcs test`
 
 </td>

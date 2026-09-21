@@ -3,7 +3,9 @@ package project_test
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/JetBrains/teamcity-cli/api"
@@ -98,6 +100,86 @@ func TestVcsDelete(T *testing.T) {
 
 	out := cmdtest.CaptureOutput(T, f, "project", "vcs", "delete", "TestProject_Repo", "--yes")
 	assert.Contains(T, out, "Deleted VCS root TestProject_Repo")
+}
+
+func TestVcsSetBranchSpec(t *testing.T) {
+	ts := cmdtest.SetupMockClient(t)
+
+	var gotPath, gotValue string
+	ts.Handle("PUT /app/rest/vcs-roots/id:", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		gotPath = r.URL.Path
+		gotValue = string(body)
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	out := cmdtest.CaptureOutput(t, ts.Factory, "project", "vcs", "set", "TestProject_Repo", "--branch-spec", "+:refs/heads/*")
+	assert.Equal(t, "/app/rest/vcs-roots/id:TestProject_Repo/properties/teamcity:branchSpec", gotPath)
+	assert.Equal(t, "+:refs/heads/*", gotValue)
+	assert.Contains(t, out, "Branch Spec: (not set) → +:refs/heads/*")
+	assert.Contains(t, out, "Updated VCS root")
+}
+
+func TestVcsSetBranch(t *testing.T) {
+	ts := cmdtest.SetupMockClient(t)
+
+	var gotValue string
+	ts.Handle("PUT /app/rest/vcs-roots/id:", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		gotValue = string(body)
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	out := cmdtest.CaptureOutput(t, ts.Factory, "project", "vcs", "set", "TestProject_Repo", "--branch", "refs/heads/develop")
+	assert.Equal(t, "refs/heads/develop", gotValue)
+	assert.Contains(t, out, "Branch: refs/heads/main → refs/heads/develop")
+	assert.NotContains(t, out, "Branch Spec:")
+}
+
+func TestVcsSetBothFlags(t *testing.T) {
+	ts := cmdtest.SetupMockClient(t)
+
+	var props []string
+	ts.Handle("PUT /app/rest/vcs-roots/id:", func(w http.ResponseWriter, r *http.Request) {
+		props = append(props, strings.TrimPrefix(r.URL.Path, "/app/rest/vcs-roots/id:TestProject_Repo/properties/"))
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	out := cmdtest.CaptureOutput(t, ts.Factory, "project", "vcs", "set", "TestProject_Repo",
+		"--branch", "refs/heads/develop", "--branch-spec", "+:refs/heads/release/*")
+	assert.ElementsMatch(t, []string{"branch", "teamcity:branchSpec"}, props)
+	assert.Contains(t, out, "Branch: refs/heads/main → refs/heads/develop")
+	assert.Contains(t, out, "Branch Spec: (not set) → +:refs/heads/release/*")
+}
+
+func TestVcsSetClearBranchSpec(t *testing.T) {
+	ts := cmdtest.SetupMockClient(t)
+
+	var gotValue string
+	ts.Handle("PUT /app/rest/vcs-roots/id:", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		gotValue = string(body)
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	cmdtest.CaptureOutput(t, ts.Factory, "project", "vcs", "set", "TestProject_Repo", "--branch-spec", "")
+	assert.Empty(t, gotValue)
+}
+
+func TestVcsSetRequiresFlag(t *testing.T) {
+	ts := cmdtest.SetupMockClient(t)
+
+	cmdtest.RunCmdWithFactoryExpectErr(t, ts.Factory, "nothing to update", "project", "vcs", "set", "TestProject_Repo")
+}
+
+func TestVcsSetNotFound(t *testing.T) {
+	ts := cmdtest.SetupMockClient(t)
+
+	cmdtest.RunCmdWithFactoryExpectErr(t, ts.Factory, "No VCS root found",
+		"project", "vcs", "set", "NonExistentVcsRoot123456", "--branch-spec", "+:refs/heads/*")
 }
 
 func TestVcsCreateAnonymous(T *testing.T) {

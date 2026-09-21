@@ -21,7 +21,7 @@ func newVcsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "vcs",
 		Short: "Manage VCS roots",
-		Long: `List, view, create, test, and delete VCS roots in a project.
+		Long: `List, view, create, set, test, and delete VCS roots in a project.
 
 A VCS root defines how TeamCity connects to a version control
 repository (Git, Mercurial, Perforce, SVN, ...) so that jobs can
@@ -35,6 +35,7 @@ See: https://www.jetbrains.com/help/teamcity/vcs-root.html`,
 	cmd.AddCommand(newVcsListCmd(f))
 	cmd.AddCommand(newVcsViewCmd(f))
 	cmd.AddCommand(newVcsCreateCmd(f))
+	cmd.AddCommand(newVcsSetCmd(f))
 	cmd.AddCommand(newVcsTestCmd(f))
 	cmd.AddCommand(newVcsDeleteCmd(f))
 
@@ -600,6 +601,84 @@ func inferAuthFromURL(repoURL string) string {
 		return authSSHKey
 	}
 	return authAnonymous
+}
+
+type vcsSetOptions struct {
+	branch     string
+	branchSpec string
+}
+
+func newVcsSetCmd(f *cmdutil.Factory) *cobra.Command {
+	opts := &vcsSetOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "set <vcs-root-id>",
+		Short: "Update branch settings of a VCS root",
+		Long: `Update the default branch or branch specification of an existing VCS root.
+
+Only the flags you pass are changed; everything else stays as-is.
+Pass an empty --branch-spec ("") to remove branch filtering so builds
+only run on the default branch.`,
+		Example: `  teamcity project vcs set MyProject_GitHubRepo --branch-spec "+:refs/heads/*"
+  teamcity project vcs set MyProject_GitHubRepo --branch refs/heads/develop
+  teamcity project vcs set MyProject_GitHubRepo --branch-spec ""`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runVcsSet(f, cmd, args[0], opts)
+		},
+	}
+
+	cmd.Flags().StringVar(&opts.branch, "branch", "", "Default branch to set (e.g. refs/heads/main)")
+	cmd.Flags().StringVar(&opts.branchSpec, "branch-spec", "", "Branch specification to set; empty string clears it")
+
+	return cmd
+}
+
+func runVcsSet(f *cmdutil.Factory, cmd *cobra.Command, id string, opts *vcsSetOptions) error {
+	branchChanged := cmd.Flags().Changed("branch")
+	specChanged := cmd.Flags().Changed("branch-spec")
+	if !branchChanged && !specChanged {
+		return api.Validation("nothing to update", "Pass --branch and/or --branch-spec")
+	}
+
+	client, err := f.Client()
+	if err != nil {
+		return err
+	}
+
+	// Fail fast on a bad ID and capture current values for the change summary.
+	root, err := client.GetVcsRoot(id)
+	if err != nil {
+		return err
+	}
+
+	current := map[string]string{}
+	if root.Properties != nil {
+		for _, p := range root.Properties.Property {
+			current[p.Name] = p.Value
+		}
+	}
+
+	updates := []struct {
+		prop, label, value string
+		changed            bool
+	}{
+		{"branch", "Branch", opts.branch, branchChanged},
+		{"teamcity:branchSpec", "Branch Spec", opts.branchSpec, specChanged},
+	}
+
+	for _, u := range updates {
+		if !u.changed {
+			continue
+		}
+		if err := client.SetVcsRootProperty(id, u.prop, u.value); err != nil {
+			return fmt.Errorf("failed to set %s on VCS root %s: %w", u.prop, id, err)
+		}
+		f.Printer.PrintField(u.label, fmt.Sprintf("%s → %s", cmp.Or(current[u.prop], "(not set)"), cmp.Or(u.value, "(cleared)")))
+	}
+
+	f.Printer.Success("Updated VCS root %q (%s)", root.Name, root.ID)
+	return nil
 }
 
 func newVcsTestCmd(f *cmdutil.Factory) *cobra.Command {

@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 // GetVcsRoots returns a list of VCS roots, following pagination; the bool is true when a finite limit capped the result.
@@ -50,6 +51,12 @@ func (c *Client) GetVcsRoot(id string) (*VcsRoot, error) {
 func (c *Client) DeleteVcsRoot(id string) error {
 	path := "/app/rest/vcs-roots/id:" + id
 	return c.doNoContent(c.ctx(), "DELETE", path, nil, "")
+}
+
+// SetVcsRootProperty updates a single VCS root property, e.g. `teamcity:branchSpec`.
+func (c *Client) SetVcsRootProperty(id, name, value string) error {
+	path := fmt.Sprintf("/app/rest/vcs-roots/id:%s/properties/%s", url.PathEscape(id), url.PathEscape(name))
+	return c.doNoContent(c.ctx(), "PUT", path, strings.NewReader(value), "text/plain")
 }
 
 // CreateVcsRoot creates a new VCS root

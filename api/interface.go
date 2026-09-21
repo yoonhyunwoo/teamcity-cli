@@ -133,6 +133,7 @@ type ClientInterface interface {
 	GetVcsRoot(id string) (*VcsRoot, error)
 	CreateVcsRoot(root VcsRoot) (*VcsRoot, error)
 	DeleteVcsRoot(id string) error
+	SetVcsRootProperty(id, name, value string) error
 	TestVcsConnection(req TestConnectionRequest, projectID string) (*TestConnectionResult, error)
 
 	GetSSHKeys(projectID string) (*SSHKeyList, error)
