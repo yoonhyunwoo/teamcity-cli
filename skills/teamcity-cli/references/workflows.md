@@ -954,7 +954,7 @@ teamcity pipeline delete <pipeline-id> --yes   # skip confirmation
 
 1. **Use `--json` for programmatic access** - Parse with `jq` for complex queries
 
-1. **Use `teamcity api` as escape hatch** - When a specific command doesn't exist, use raw API access
+1. **Dedicated commands first, `teamcity api` as escape hatch** - Check `teamcity <area> --help` before assuming a command doesn't exist. When you do need raw REST, `teamcity api` already sends `Accept: application/json` and supports `--paginate` for full enumeration — plain curl is rarely needed
 
 1. **Environment variables** - If overriding with env vars, set both `TEAMCITY_URL` and `TEAMCITY_TOKEN`; `TEAMCITY_URL` alone bypasses stored auth
 

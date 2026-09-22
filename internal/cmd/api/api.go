@@ -46,6 +46,9 @@ func NewCmd(f *cmdutil.Factory) *cobra.Command {
 		Short: "Make an authenticated API request",
 		Long: `Make an authenticated HTTP request to the TeamCity REST API.
 
+Prefer the CLI's dedicated commands — check 'teamcity <command> --help'
+first and use this only for endpoints they don't cover.
+
 The endpoint argument should be the path portion of the URL,
 starting with /app/rest/. The base URL and authentication
 are handled automatically.
@@ -54,6 +57,8 @@ This command is useful for:
 - Accessing API features not yet supported by the CLI
 - Scripting and automation
 - Debugging and exploration
+
+Requests default to Accept: application/json; override with -H if needed.
 
 See: https://www.jetbrains.com/help/teamcity/rest/teamcity-rest-api-documentation.html`,
 		Args: cobra.ExactArgs(1),
