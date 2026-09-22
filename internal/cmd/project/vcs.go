@@ -43,6 +43,7 @@ See: https://www.jetbrains.com/help/teamcity/vcs-root.html`,
 
 type vcsListOptions struct {
 	project string
+	all     bool
 	cmdutil.ListFlags
 	cmdutil.ViewOptions
 }
@@ -51,16 +52,25 @@ func newVcsListCmd(f *cmdutil.Factory) *cobra.Command {
 	opts := &vcsListOptions{}
 
 	cmd := &cobra.Command{
-		Use:     "list",
-		Short:   "List VCS roots",
-		Long:    `List VCS roots visible to a project, including inherited from parent projects.`,
+		Use:   "list",
+		Short: "List VCS roots",
+		Long: `List VCS roots visible to a project, including inherited from parent projects.
+
+Use --all to list every VCS root on the server without project scoping.`,
 		Aliases: []string{"ls"},
 		Example: `  teamcity project vcs list
   teamcity project vcs list --project MyProject
+  teamcity project vcs list --all
   teamcity project vcs list --project MyProject --json
   teamcity project vcs list --plain
   teamcity project vcs list --project MyProject --web`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if opts.all && opts.project != "" {
+				return api.Validation("--all cannot be combined with --project", "Drop one of the two to scope the listing")
+			}
+			if opts.all && opts.Web {
+				return api.Validation("--all cannot be combined with --web", "--web opens a single project's VCS roots page")
+			}
 			if opts.Web {
 				if err := cmdutil.ValidateLimit(opts.Limit); err != nil {
 					return err
@@ -75,6 +85,7 @@ func newVcsListCmd(f *cmdutil.Factory) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&opts.project, "project", "p", "", "Project ID (default: _Root)")
+	cmd.Flags().BoolVar(&opts.all, "all", false, "List all VCS roots visible to the authenticated user")
 	cmdutil.AddListFlags(cmd, &opts.ListFlags, 100)
 	cmdutil.AddWebFlags(cmd, &opts.ViewOptions)
 
@@ -86,6 +97,7 @@ func newVcsListCmd(f *cmdutil.Factory) *cobra.Command {
 func (opts *vcsListOptions) fetch(client api.ClientInterface, fields []string) (*cmdutil.ListResult, error) {
 	roots, truncated, err := client.GetVcsRoots(api.VcsRootsOptions{
 		Project: cmp.Or(opts.project, "_Root"),
+		All:     opts.all,
 		Limit:   opts.Limit,
 		Fields:  fields,
 	})

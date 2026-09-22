@@ -500,6 +500,7 @@ type VcsRootList struct {
 // VcsRootsOptions represents options for listing VCS roots
 type VcsRootsOptions struct {
 	Project string // affectedProject locator
+	All     bool   // list every visible root, ignoring Project
 	Limit   int
 	Fields  []string
 }

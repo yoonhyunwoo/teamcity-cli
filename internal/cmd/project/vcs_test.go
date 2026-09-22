@@ -61,6 +61,34 @@ func TestVcsListDefaultProject(T *testing.T) {
 	assert.Contains(T, out, "TestProject_Repo")
 }
 
+func TestVcsListAll(t *testing.T) {
+	ts := cmdtest.SetupMockClient(t)
+
+	ts.Handle("GET /app/rest/vcs-roots", func(w http.ResponseWriter, r *http.Request) {
+		assert.NotContains(t, r.URL.RawQuery, "affectedProject", "--all must not scope the locator to a project")
+		cmdtest.JSON(w, api.VcsRootList{
+			Count: 2,
+			VcsRoot: []api.VcsRoot{
+				{ID: "TestProject_Repo", Name: "My Repo", VcsName: "jetbrains.git", Project: &api.Project{ID: "TestProject"}},
+				{ID: "OtherProject_Repo", Name: "Other Repo", VcsName: "jetbrains.git", Project: &api.Project{ID: "OtherProject"}},
+			},
+		})
+	})
+
+	out := cmdtest.CaptureOutput(t, ts.Factory, "project", "vcs", "list", "--all")
+	assert.Contains(t, out, "TestProject_Repo")
+	assert.Contains(t, out, "OtherProject_Repo")
+}
+
+func TestVcsListAllRejectsProjectAndWeb(t *testing.T) {
+	ts := cmdtest.SetupMockClient(t)
+
+	cmdtest.RunCmdWithFactoryExpectErr(t, ts.Factory, "cannot be combined",
+		"project", "vcs", "list", "--all", "--project", "TestProject")
+	cmdtest.RunCmdWithFactoryExpectErr(t, ts.Factory, "cannot be combined",
+		"project", "vcs", "list", "--all", "--web")
+}
+
 func TestVcsView(T *testing.T) {
 	ts := cmdtest.SetupMockClient(T)
 	f := ts.Factory
