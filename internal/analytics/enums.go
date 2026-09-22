@@ -17,6 +17,7 @@ func allCommands() []string {
 		"job.param.list", "job.param.get", "job.param.set", "job.param.delete",
 		"job.settings.list", "job.settings.get", "job.settings.set",
 		"job.step.list", "job.step.view", "job.step.add", "job.step.delete",
+		"job.trigger.list", "job.trigger.add", "job.trigger.delete",
 		"project.list", "project.view", "project.tree", "project.create",
 		"project.vcs.list", "project.vcs.view", "project.vcs.create", "project.vcs.set", "project.vcs.test", "project.vcs.delete",
 		"project.ssh.list", "project.ssh.upload", "project.ssh.generate", "project.ssh.delete",
