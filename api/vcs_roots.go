@@ -12,9 +12,11 @@ import (
 
 // GetVcsRoots returns a list of VCS roots, following pagination; the bool is true when a finite limit capped the result.
 func (c *Client) GetVcsRoots(opts VcsRootsOptions) (*VcsRootList, bool, error) {
-	locator := NewLocator().
-		Add("affectedProject", opts.Project).
-		AddInt("count", pageCount(opts.Limit))
+	locator := NewLocator()
+	if !opts.All {
+		locator.Add("affectedProject", opts.Project)
+	}
+	locator.AddInt("count", pageCount(opts.Limit))
 
 	fields := opts.Fields
 	if len(fields) == 0 {
