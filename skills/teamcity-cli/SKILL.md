@@ -39,16 +39,18 @@ Cross-origin downloads drop request headers; HTTPS downgrades and cross-origin t
 | Builds    | `run list`, `view`, `start`, `watch`, `log`, `cancel`, `restart`, `tests`, `changes`, `tree`      |
 | Artifacts | `run artifacts`, `run download`                                                                   |
 | Metadata  | `run pin/unpin`, `run tag/untag`, `run comment`                                                   |
-| Jobs      | `job list`, `view`, `create`, `tree`, `pause/resume`, `step list/view/add/delete`, `param list/get/set/delete`, `settings list/get/set` |
+| Jobs      | `job list`, `view`, `create`, `tree`, `pause/resume`, `step list/view/add/delete`, `trigger list/add/delete`, `param list/get/set/delete`, `settings list/get/set` |
 | Projects  | `project list`, `view`, `create`, `tree`, `param`, `token put/get`, `settings export/status/enable`      |
-| VCS/Conn  | `project vcs list/view/create/delete`, `project connection list/create/authorize/delete`          |
+| VCS/Conn  | `project vcs list [--all]/view/create/set/test/delete`, `project connection list/create/authorize/delete` |
 | Queue     | `queue list`, `approve`, `remove`, `top`                                                          |
 | Agents    | `agent list`, `view`, `enable/disable`, `authorize/deauthorize`, `exec`, `term`, `reboot`, `move` |
 | Pools     | `pool list`, `view`, `link/unlink`                                                                |
 | Server    | `server plugin upload` (optionally with `--hot-reload`)                                            |
 | Pipelines | `pipeline list`, `view`, `create`, `validate`, `pull`, `push`, `schema`, `delete`                 |
-| API       | `teamcity api <endpoint>` — raw REST access                                                       |
+| API       | `teamcity api <endpoint>` — escape hatch for endpoints without a dedicated command                |
 | Link      | `teamcity link` — bind repo via `teamcity.toml`                                                   |
+
+**Command choice rule:** always reach for a dedicated subcommand first (`teamcity <area> --help` to discover what exists). Use `teamcity api` only when no command covers the endpoint — it defaults to `Accept: application/json` and supports `--paginate` for full enumeration, so plain curl is rarely needed.
 
 ## Quick Workflows
 
