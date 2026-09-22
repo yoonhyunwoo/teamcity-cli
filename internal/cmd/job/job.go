@@ -31,6 +31,7 @@ See: https://www.jetbrains.com/help/teamcity/creating-and-editing-build-configur
 	cmd.AddCommand(newJobPauseCmd(f))
 	cmd.AddCommand(newJobResumeCmd(f))
 	cmd.AddCommand(newJobStepCmd(f))
+	cmd.AddCommand(newJobTriggerCmd(f))
 	cmd.AddCommand(param.NewCmd(f, "job", param.JobParamAPI, f.ResolveDefaultJob))
 	cmd.AddCommand(setting.NewCmd(f, "job", f.ResolveDefaultJob))
 

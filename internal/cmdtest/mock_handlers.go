@@ -214,6 +214,17 @@ func SetupMockClient(t *testing.T) *TestServer {
 			return
 		}
 
+		if strings.Contains(r.URL.Path, "/triggers") {
+			JSON(w, api.BuildTriggerList{Count: 2, Trigger: []api.BuildTrigger{
+				{ID: "TRIGGER_1", Type: "vcsTrigger"},
+				{ID: "TRIGGER_2", Type: "scheduleTrigger", Properties: api.PropertyList{Property: []api.Property{
+					{Name: "schedule", Value: "cron"},
+					{Name: "cronExpression", Value: "0 0 2 * *?"},
+				}}},
+			}})
+			return
+		}
+
 		JSON(w, api.BuildType{
 			ID:        id,
 			Name:      "Build",
@@ -229,6 +240,16 @@ func SetupMockClient(t *testing.T) *TestServer {
 	ts.Handle("POST /app/rest/buildTypes/id:", func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "/steps") {
 			JSON(w, api.BuildStep{ID: "RUNNER_1", Name: "Run Tests", Type: "commandLine"})
+			return
+		}
+		if strings.Contains(r.URL.Path, "/triggers") {
+			var t api.BuildTrigger
+			if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
+				Error(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			t.ID = "TRIGGER_1"
+			JSON(w, t)
 			return
 		}
 		w.WriteHeader(http.StatusOK)

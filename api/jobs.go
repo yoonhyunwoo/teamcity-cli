@@ -131,6 +131,59 @@ type BuildStepList struct {
 
 const buildStepFields = "count,step(id,name,type,disabled,properties(property(name,value)))"
 
+// BuildTrigger represents a trigger attached to a build configuration
+type BuildTrigger struct {
+	ID         string       `json:"id,omitempty"`
+	Type       string       `json:"type"`
+	Properties PropertyList `json:"properties"`
+}
+
+// BuildTriggerList represents the triggers of a build configuration
+type BuildTriggerList struct {
+	Count   int            `json:"count"`
+	Trigger []BuildTrigger `json:"trigger"`
+}
+
+const buildTriggerFields = "count,trigger(id,type,properties(property(name,value)))"
+
+// GetBuildTriggers returns the triggers of a build configuration
+func (c *Client) GetBuildTriggers(buildTypeID string) (*BuildTriggerList, error) {
+	path := fmt.Sprintf("/app/rest/buildTypes/id:%s/triggers?fields=%s", url.PathEscape(buildTypeID), url.QueryEscape(buildTriggerFields))
+
+	var result BuildTriggerList
+	if err := c.get(c.ctx(), path, &result); err != nil {
+		return nil, err
+	}
+	if result.Trigger == nil {
+		result.Trigger = []BuildTrigger{} // non-nil so --json emits [] not null
+	}
+
+	return &result, nil
+}
+
+// CreateBuildTrigger adds a trigger to a build configuration and returns the created trigger
+func (c *Client) CreateBuildTrigger(buildTypeID string, trigger BuildTrigger) (*BuildTrigger, error) {
+	body, err := json.Marshal(trigger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	path := fmt.Sprintf("/app/rest/buildTypes/id:%s/triggers", url.PathEscape(buildTypeID))
+
+	var created BuildTrigger
+	if err := c.post(c.ctx(), path, bytes.NewReader(body), &created); err != nil {
+		return nil, err
+	}
+
+	return &created, nil
+}
+
+// DeleteBuildTrigger removes a trigger from a build configuration
+func (c *Client) DeleteBuildTrigger(buildTypeID, triggerID string) error {
+	path := fmt.Sprintf("/app/rest/buildTypes/id:%s/triggers/%s", url.PathEscape(buildTypeID), url.PathEscape(triggerID))
+	return c.doNoContent(c.ctx(), "DELETE", path, nil, "")
+}
+
 // GetBuildSteps returns the build steps of a build configuration
 func (c *Client) GetBuildSteps(buildTypeID string) (*BuildStepList, error) {
 	path := fmt.Sprintf("/app/rest/buildTypes/id:%s/steps?fields=%s", url.PathEscape(buildTypeID), url.QueryEscape(buildStepFields))

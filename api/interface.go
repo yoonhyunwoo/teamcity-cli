@@ -39,6 +39,9 @@ type ClientInterface interface {
 	GetBuildStep(buildTypeID, stepID string) (*BuildStep, error)
 	CreateBuildStep(buildTypeID string, step BuildStep) (*BuildStep, error)
 	DeleteBuildStep(buildTypeID, stepID string) error
+	GetBuildTriggers(buildTypeID string) (*BuildTriggerList, error)
+	CreateBuildTrigger(buildTypeID string, trigger BuildTrigger) (*BuildTrigger, error)
+	DeleteBuildTrigger(buildTypeID, triggerID string) error
 	GetSnapshotDependencies(buildTypeID string) (*SnapshotDependencyList, error)
 	GetDependentBuildTypes(buildTypeID string) (*BuildTypeList, error)
 	GetVcsRootEntries(buildTypeID string) (*VcsRootEntries, error)

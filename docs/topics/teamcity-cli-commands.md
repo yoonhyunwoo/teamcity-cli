@@ -508,6 +508,42 @@ Display snapshot dependency tree
 <tr>
 <td>
 
+`teamcity job trigger add`
+
+</td>
+<td>
+
+Add a trigger to a job
+
+</td>
+</tr>
+<tr>
+<td>
+
+`teamcity job trigger delete`
+
+</td>
+<td>
+
+Delete a job trigger
+
+</td>
+</tr>
+<tr>
+<td>
+
+`teamcity job trigger list`
+
+</td>
+<td>
+
+List job triggers
+
+</td>
+</tr>
+<tr>
+<td>
+
 `teamcity job view`
 
 </td>
